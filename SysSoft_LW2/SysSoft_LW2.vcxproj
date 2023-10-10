@@ -128,10 +128,12 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="ProcessInfo.cpp" />
+    <ClCompile Include="SFunctions.cpp" />
     <ClCompile Include="SysSoft_LW2.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ProcessInfo.h" />
+    <ClInclude Include="SFunctions.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
