@@ -173,7 +173,7 @@ int main()
                 VariantClear(&vtProp);
             }
             else
-                wcout << "MAC-адреса адаптера: " <<
+                wcout << "MAC-адреса мережевого адаптера: " <<
                 "" << endl << endl;
         }
         pclsObj->Release();
@@ -257,7 +257,7 @@ int main()
     * 3. Запущено процес згідно із варіантом
     */
 
-    cout << "Завдання 3." << endl
+    wcout << "Завдання 3." << endl
         << "Інформація про запущений процес згідно із варіантом (WINWORD.EXE):\n";
 
     STARTUPINFO si;
@@ -295,13 +295,15 @@ int main()
     SetPriorityClass(pi.hProcess,
         NORMAL_PRIORITY_CLASS);
 
+    Sleep(4000);
+
     // Виконання запиту до WMI, для отримання даних про процес
 
     // Формування запиту WQL
-    wstring WQL_Porc_Querry = L"SELECT * FROM Win32_Process WHERE ( Name = 'WINWORD.EXE' AND ParentProcessId = ";
+    wstring WQL_Porc_Querry = L"SELECT * FROM Win32_Process WHERE NAME = 'WINWORD.EXE' AND ParentProcessId = ";
     DWORD currProcID = GetCurrentProcessId();
-    DWORD winWordProcId;
-    WQL_Porc_Querry += to_wstring(currProcID) + L")";
+    DWORD winWordProcId = 0;
+    WQL_Porc_Querry += to_wstring(currProcID);
 
     hRes = pSvc->ExecQuery(
         BSTR(L"WQL"),
@@ -328,87 +330,96 @@ int main()
         VARIANT vtEntity;
 
         hRes = pclsObj->Get(L"ExecutablePath", 0, &vtEntity, 0, 0);
-        wcout << L"Шлях до виконуваного файлу процесу: " << vtEntity.bstrVal << endl;
+        wcout << "Шлях до виконуваного файлу процесу: " << vtEntity.bstrVal << endl;
         VariantClear(&vtEntity);
 
         hRes = pclsObj->Get(L"CreationDate", 0, &vtEntity, 0, 0);
-        wcout << L"Час початку процесу: " << WMIDateStringToDate(vtEntity.bstrVal) << endl;
+        wcout << "Час початку процесу: " << WMIDateStringToDate(vtEntity.bstrVal) << endl;
         VariantClear(&vtEntity);
 
         hRes = pclsObj->Get(L"Priority", 0, &vtEntity, 0, 0); 
-        wcout << L"Пріоритет процесу: " << vtEntity.uintVal << endl;
+        wcout << "Пріоритет процесу: " << vtEntity.uintVal << endl;
         VariantClear(&vtEntity);
 
         hRes = pclsObj->Get(L"ProcessId", 0, &vtEntity, 0, 0); 
         winWordProcId = vtEntity.uintVal;
-        wcout << L"Ідентифікатор процесу: " << vtEntity.uintVal << endl;
+        wcout << "Ідентифікатор процесу: " << vtEntity.uintVal << endl;
         VariantClear(&vtEntity);
 
         hRes = pclsObj->Get(L"ThreadCount", 0, &vtEntity, 0, 0);
-        wcout << L"Кількість активних потоків процесу: " << vtEntity.uintVal << endl << endl;
+        wcout << "Кількість активних потоків процесу: " << vtEntity.uintVal << endl << endl;
         VariantClear(&vtEntity);
 
         pclsObj->Release();
     }
 
     // Формування запиту про потоки батьківського процеса
-    //cout << "Інформація про активні потоки запущеного процесу: " << endl;
-    //wstring WQL_Thread_Querry = L"SELECT * FROM Win32_Thread WHERE ProcessHandle = ";
-    //WQL_Thread_Querry += to_wstring(winWordProcId);
 
-    //hRes = pSvc->ExecQuery(
-    //    BSTR(L"WQL"),
-    //    BSTR(WQL_Thread_Querry.c_str()),
-    //    WBEM_FLAG_FORWARD_ONLY | WBEM_FLAG_RETURN_IMMEDIATELY,
-    //    NULL,
-    //    &pEnumerator
-    //);
+    cout << "Інформація про активні потоки запущеного процесу: " << endl;
+    wstring WQL_Thread_Querry = L"SELECT * FROM Win32_Thread WHERE ProcessHandle = ";
+    WQL_Thread_Querry += to_wstring(winWordProcId);
 
-    //if (checkResult(hRes, pSvc, pLoc) != S_OK)
-    //    return 1; // Аварійне завершення програми
+    // Кількість процесів
+    unsigned int numOfThreads = 0;
 
-    //while (pEnumerator)
-    //{
-    //    hRes = pEnumerator->Next(WBEM_INFINITE, 1, &pclsObj, &uReturn);
+    hRes = pSvc->ExecQuery(
+        BSTR(L"WQL"),
+        BSTR(WQL_Thread_Querry.c_str()),
+        WBEM_FLAG_FORWARD_ONLY | WBEM_FLAG_RETURN_IMMEDIATELY,
+        NULL,
+        &pEnumerator
+    );
 
-    //    if (checkResult(hRes, pSvc, pLoc) != S_OK)
-    //        return 1; // Аварійне завершення програми
+    if (checkResult(hRes, pSvc, pLoc) != S_OK)
+        return 1; // Аварійне завершення програми
 
-    //    if (uReturn == 0)
-    //        break;
+    while (pEnumerator)
+    {
+        hRes = pEnumerator->Next(WBEM_INFINITE, 1, &pclsObj, &uReturn);
 
-    //    VARIANT vtThProp;
-    //    ULONGLONG  threadUMT, theradKMT;
+        if (checkResult(hRes, pSvc, pLoc) != S_OK)
+            return 1; // Аварійне завершення програми
 
-    //    hRes = pclsObj->Get(L"ProcessHandle", 0, &vtThProp, 0, 0);
-    //    wcout << L"Ідентифікатор процесу, що створив потік: " << vtThProp.bstrVal << endl;
-    //    VariantClear(&vtThProp);
+        if (uReturn == 0)
+            break;
 
-    //    hRes = pclsObj->Get(L"DynamicPriority", 0, &vtThProp, 0, 0);
-    //    wcout << L"Динамічний пріоритет потоку: " << vtThProp.uintVal << endl;
-    //    VariantClear(&vtThProp);
+        VARIANT vtThProp;
+        VariantInit(&vtThProp);
+        ULONGLONG  threadUMT, theradKMT;
 
-    //    hRes = pclsObj->Get(L"Priority", 0, &vtThProp, 0, 0);
-    //    wcout << L"Базовий пріоритет потоку: " << vtThProp.uintVal << endl;
-    //    VariantClear(&vtThProp);
+        hRes = pclsObj->Get(L"ProcessHandle", 0, &vtThProp, 0, 0);
 
-    //    hRes = pclsObj->Get(L"UserModeTime", 0, &vtThProp, 0, 0);
-    //    threadUMT = vtThProp.ullVal;
-    //    VariantClear(&vtThProp);
+        numOfThreads++;
+        wcout << "Інформація про поток з номером " << numOfThreads << ": \n";
 
-    //    hRes = pclsObj->Get(L"KernelModeTime", 0, &vtThProp, 0, 0);
-    //    theradKMT = vtThProp.ullVal;
-    //    VariantClear(&vtThProp);
+        wcout << "Ідентифікатор процесу, що створив потік: " << vtThProp.bstrVal << endl;
+        VariantClear(&vtThProp);
 
-    //    wcout << L"Загальний час виконання потоку (Kernel Mode Time + User Mode Time): "
-    //        << threadUMT + theradKMT << endl;
+        hRes = pclsObj->Get(L"DynamicPriority", 0, &vtThProp, 0, 0);
+        wcout << "Динамічний пріоритет потоку: " << vtThProp.uintVal << endl;
+        VariantClear(&vtThProp);
 
-    //    hRes = pclsObj->Get(L"ThreadState", 0, &vtThProp, 0, 0);
-    //    wcout << L"Стан потоку: " << vtThProp.uintVal << endl << endl;
-    //    VariantClear(&vtThProp);
+        hRes = pclsObj->Get(L"Priority", 0, &vtThProp, 0, 0);
+        wcout << "Базовий пріоритет потоку: " << vtThProp.uintVal << endl;
+        VariantClear(&vtThProp);
 
-    //    pclsObj->Release();
-    //}
+        hRes = pclsObj->Get(L"UserModeTime", 0, &vtThProp, 0, 0);
+        threadUMT = vtThProp.ullVal;
+        VariantClear(&vtThProp);
+
+        hRes = pclsObj->Get(L"KernelModeTime", 0, &vtThProp, 0, 0);
+        theradKMT = vtThProp.ullVal;
+        VariantClear(&vtThProp);
+
+        wcout << "Загальний час виконання потоку (Kernel Mode Time + User Mode Time): "
+            << threadUMT + theradKMT << endl;
+
+        hRes = pclsObj->Get(L"ThreadState", 0, &vtThProp, 0, 0);
+        wcout << "Стан потоку: " << vtThProp.uintVal << endl << endl;
+        VariantClear(&vtThProp);
+
+        pclsObj->Release();
+    }
 
     /*
     * 4. Отримано та виведено збір інформації про процеси згідно з варіантом
