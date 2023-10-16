@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Windows.h>
+#include <TlHelp32.h>
 #include <WbemIdl.h>
 #include <iostream>
 #include <string>
@@ -10,5 +11,8 @@
 using namespace std;
 
 // Прототипи допоміжних функцій 
-HRESULT checkResult(HRESULT hRes, IWbemServices* pSvc, IWbemLocator* pLoc);
+HRESULT CheckResult(HRESULT hRes, IWbemServices* pSvc, IWbemLocator* pLoc);
 wstring WMIDateStringToDate(const wstring& wmiDate);
+DWORD GetProcId(const wchar_t* procName);
+void TerminateLowPriorityNotepadProcess();
+void TerminateChildProcess(DWORD parentProcessID);

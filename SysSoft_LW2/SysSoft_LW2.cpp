@@ -106,7 +106,7 @@ int main()
         NULL,
         &pEnumerator);
 
-    if (checkResult(hRes, pSvc, pLoc) != S_OK)
+    if (CheckResult(hRes, pSvc, pLoc) != S_OK)
         return 1; // Аварійне завершення програми
 
     // Отримання даних з запиту
@@ -120,7 +120,7 @@ int main()
     {
         hRes = pEnumerator->Next(WBEM_INFINITE, 1, &pclsObj, &uReturn);
 
-        if (checkResult(hRes, pSvc, pLoc) != S_OK)
+        if (CheckResult(hRes, pSvc, pLoc) != S_OK)
             return 1; // Аварійне завершення програми
 
         if (0 == uReturn)
@@ -228,7 +228,7 @@ int main()
             if (lResult == ERROR_SUCCESS)
             {
                 // Виведено інформацію про мережевий адаптер, включаючи MAC-адресу
-                wcout << L"Network interface GUID: " << adapterGuid << endl;
+                wcout << "Network interface GUID: " << adapterGuid << endl;
                 wcout << L"DhcpIPAddress: " << macAddress << endl << endl;
             }
             else
@@ -313,7 +313,7 @@ int main()
         &pEnumerator
     );
 
-    if (checkResult(hRes, pSvc, pLoc) != S_OK)
+    if (CheckResult(hRes, pSvc, pLoc) != S_OK)
         return 1; // Аварійне завершення програми
 
     // Отримання результатів запиту та вилучення даних про процес
@@ -321,7 +321,7 @@ int main()
     {
         hRes = pEnumerator->Next(WBEM_INFINITE, 1, &pclsObj, &uReturn);
 
-        if (checkResult(hRes, pSvc, pLoc) != S_OK)
+        if (CheckResult(hRes, pSvc, pLoc) != S_OK)
             return 1; // Аварійне завершення програми
 
         if (uReturn == 0)
@@ -370,14 +370,14 @@ int main()
         &pEnumerator
     );
 
-    if (checkResult(hRes, pSvc, pLoc) != S_OK)
+    if (CheckResult(hRes, pSvc, pLoc) != S_OK)
         return 1; // Аварійне завершення програми
 
     while (pEnumerator)
     {
         hRes = pEnumerator->Next(WBEM_INFINITE, 1, &pclsObj, &uReturn);
 
-        if (checkResult(hRes, pSvc, pLoc) != S_OK)
+        if (CheckResult(hRes, pSvc, pLoc) != S_OK)
             return 1; // Аварійне завершення програми
 
         if (uReturn == 0)
@@ -438,7 +438,7 @@ int main()
         &pEnumerator
     );
 
-    if (checkResult(hRes, pSvc, pLoc) != S_OK)
+    if (CheckResult(hRes, pSvc, pLoc) != S_OK)
         return 1; // Аварійне завершення програми
 
     // Отримання результатів запиту та вилучення даних
@@ -446,7 +446,7 @@ int main()
     {
         hRes = pEnumerator->Next(WBEM_INFINITE, 1, &pclsObj, &uReturn);
 
-        if (checkResult(hRes, pSvc, pLoc) != S_OK)
+        if (CheckResult(hRes, pSvc, pLoc) != S_OK)
             return 1; // Аварійне завершення програми
 
         if (uReturn == 0)
@@ -495,6 +495,48 @@ int main()
     // Вивід в консоль інформації про процес, що має найбільший обсяг записаних даних
     cout << "Інформація про процес, що має найбільший обсяг записаних даних: \n";
     processList[0].PrintFields();
+
+    processList.clear();
+
+    /*
+    * 5. а) Складено сценарій, що завершує всі процеси 
+    * "notepad.exe", які мають низкий пріоритет (Idle)
+    */
+
+    // Створення тестового процесу
+    if (!CreateProcess(
+        L"C:\\WINDOWS\\system32\\notepad.exe",
+        NULL,
+        NULL,
+        NULL,
+        FALSE,
+        0,
+        NULL,
+        NULL,
+        &si,
+        &pi
+    ))
+    {
+        cout << "Не вдалося створити процес. Код помилки: "
+            << GetLastError() << endl;
+        return 1;
+    }
+
+    // Зміна пріоритету процесса
+    SetPriorityClass(pi.hProcess,
+        IDLE_PRIORITY_CLASS);
+
+    Sleep(2000);
+
+    TerminateLowPriorityNotepadProcess();
+
+    /*
+    * 5. б) Складено сценарій, що завершує всі процеси
+    * "notepad.exe", які мають низкий пріоритет (Idle)
+    */
+
+    TerminateChildProcess(GetProcId(L"TOTALCMD.EXE"));
+
     // Очікування, поки дочірній процес завершиться
     WaitForSingleObject(pi.hProcess, INFINITE);
 
